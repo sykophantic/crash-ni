@@ -1,0 +1,177 @@
+<html>
+
+<head>
+    <link rel="stylesheet" href="css/animate.css">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO"
+        crossorigin="anonymous">
+    <style>
+        @import url('css/font/stylesheet.css'); 
+
+        body {
+            background-color: #222;
+        }
+
+        .district-side {
+            width: 60px;
+            height:9.09%
+        }
+
+        .district-side > h1 {
+            font-family: Uni Sans Heavy CAPS; 
+            font-size: 2.2rem; 
+            line-height: 230%; 
+            white-space: nowrap; 
+            margin-left: 90px; 
+            display: none;
+            color: #222;
+        }
+        </style>
+</head>
+
+<body>
+
+    <div id="key-facts" style="position: fixed; margin-left: 150px; z-index: -20">
+        <h1 style="color: #fbc84b; font-family: Uni Sans Heavy CAPS; font-size: 6rem;">527 Crashes</h1>
+        <h1 style="color: #fbc84b; font-family: Uni Sans Heavy CAPS; font-size: 5rem; transform: translateY(-40px)"><span
+                style="font-family:Uni Sans Thin CAPS; color: white;">IN </span>Lisburn and Castlereagh</h1>
+        <h1 style="color: #d62626; font-family: Uni Sans Heavy CAPS; font-size: 4.5rem;transform: translateY(-70px)"><span
+                style="font-family:Uni Sans Thin CAPS; color: white;">RESULTING IN </span>820 Deaths</h1>
+    </div>
+
+    <div id="district-sidebar" style="height: 100%;">
+        <div id="BELC-side" class="district-side unselected" style="background-color:#f6892b;">
+            <h1>Belfast</h1>
+        </div>
+        <div id="ARBC-side" class="district-side unselected" style="background-color:#fec135;">
+            <h1 style="font-size: 1.5rem; line-height:320%">Armagh City, Banbridge and Craigavon</h1>
+        </div>
+        <div id="NEMD-side" class="district-side unselected" style="background-color:#ffc43a;">
+            <h1>Newry, Mourne and Down</h1>
+        </div>
+        <div id="LISC-side" class="district-side unselected" style="background-color:#fbc84b;">
+            <h1>Lisburn and Castlereagh</h1>
+        </div>
+        <div id="ANTN-side" class="district-side unselected" style="background-color:#fad163;">
+            <h1>Antrim and Newtownabbey</h1>
+        </div>
+        <div id="DCST-side" class="district-side unselected" style="background-color:#f6d672;">
+            <h1>Derry City and Strabane</h1>
+        </div>
+        <div id="MIDU-side" class="district-side unselected" style="background-color:#f5d77c;">
+            <h1>Mid Ulster</h1>
+        </div>
+        <div id="ARND-side" class="district-side unselected" style="background-color:#f4db88;">
+            <h1>Ards and North Down</h1>
+        </div>
+        <div id="CCGL-side" class="district-side unselected" style="background-color:#f5db8a;">
+            <h1>Causeway Coast and Glens</h1>
+        </div>
+        <div id="MEAN-side" class="district-side unselected" style="background-color:#f0e4a9;">
+            <h1>Mid and East Antrim</h1>
+        </div>
+        <div id="FERO-side" class="district-side unselected" style="background-color:#f0e6b3;">
+            <h1>Fermanagh and Omagh</h1>
+        </div>
+    </div>
+
+    <script src="js/anime.min.js"></script>
+
+
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo"
+        crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js" integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49"
+        crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js" integrity="sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy"
+        crossorigin="anonymous"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/tilt.js/1.2.1/tilt.jquery.min.js"></script>
+    <script>
+        $(".district-side").mouseenter(function () {
+            if ($(this).hasClass("unselected") === true) {
+                const specificDistrict = "#" + this.id
+
+                anime({
+                    targets: specificDistrict,
+                    width: "90px",
+                    easing: 'easeInOutQuart',
+                    duration: "100"
+                });
+            }
+        });
+        $(".district-side").mouseleave(function () {
+            if ($(this).hasClass("unselected") === true) {
+                const specificDistrict = "#" + this.id
+
+                anime({
+                    targets: specificDistrict,
+                    width: "60px",
+                    easing: 'easeInOutQuart',
+                    duration: "200"
+                });
+            }
+        });
+
+
+        //Side is clicked
+        $(".district-side").click(function () {
+
+            //Add the class to everyone
+            $(".district-side").addClass("unselected").children().hide();
+
+            //Then remove from this specific one
+            $(this).removeClass("unselected");
+
+            const specificDistrict = "#" + this.id
+
+            const textWidth = $(specificDistrict).children().first().width() + 130
+
+            console.log(textWidth)
+
+            //Bring all the bars back
+            anime({
+                targets: ".district-side",
+                width: "60px",
+                easing: 'easeInOutQuart',
+                duration: "200"
+            });
+
+            //Bring the specific bar out
+            anime({
+                targets: specificDistrict,
+                width: textWidth,
+                easing: 'easeInOutQuart',
+                delay: "300",
+                duration: "200"
+            });
+
+
+            if (specificDistrict === "#NEMD-side" || specificDistrict === "#ARBC-side" || specificDistrict ===
+                "#BELC-side") {
+                const distance = $(specificDistrict).position().top + 90;
+
+                anime({
+                    targets: "#key-facts",
+                    paddingTop: distance,
+                    easing: 'easeInOutQuart',
+                    duration: "200"
+                });
+            } else {
+                anime({
+                    targets: "#key-facts",
+                    paddingTop: 0,
+                    easing: 'easeInOutQuart',
+                    duration: "200"
+                });
+            }
+
+            //Wait until the bar has came out
+            setTimeout(
+                function () {
+                    //Fade in the title
+                    $(specificDistrict).children().first().addClass("animated fadeIn").show()
+                }, 400)
+
+        });
+    </script>
+</body>
+
+</html>

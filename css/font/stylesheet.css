@@ -1,0 +1,36 @@
+@font-face {
+    font-family: 'Uni Sans Thin Italic CAPS';
+    src: url('UniSansThinItalicCAPS.eot');
+    src: url('UniSansThinItalicCAPS.eot?#iefix') format('embedded-opentype'),
+        url('UniSansThinItalicCAPS.woff2') format('woff2'),
+        url('UniSansThinItalicCAPS.woff') format('woff'),
+        url('UniSansThinItalicCAPS.ttf') format('truetype'),
+        url('UniSansThinItalicCAPS.svg#UniSansThinItalicCAPS') format('svg');
+    font-weight: 100;
+    font-style: italic;
+}
+
+@font-face {
+    font-family: 'Uni Sans Heavy CAPS';
+    src: url('UniSansHeavyCAPS.eot');
+    src: url('UniSansHeavyCAPS.eot?#iefix') format('embedded-opentype'),
+        url('UniSansHeavyCAPS.woff2') format('woff2'),
+        url('UniSansHeavyCAPS.woff') format('woff'),
+        url('UniSansHeavyCAPS.ttf') format('truetype'),
+        url('UniSansHeavyCAPS.svg#UniSansHeavyCAPS') format('svg');
+    font-weight: 900;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Uni Sans Thin CAPS';
+    src: url('UniSansThinCAPS.eot');
+    src: url('UniSansThinCAPS.eot?#iefix') format('embedded-opentype'),
+        url('UniSansThinCAPS.woff2') format('woff2'),
+        url('UniSansThinCAPS.woff') format('woff'),
+        url('UniSansThinCAPS.ttf') format('truetype'),
+        url('UniSansThinCAPS.svg#UniSansThinCAPS') format('svg');
+    font-weight: 100;
+    font-style: normal;
+}
+
