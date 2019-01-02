@@ -1,0 +1,225 @@
+<html>
+
+<head>
+    <link rel="stylesheet" href="css/animate.css">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO"
+        crossorigin="anonymous">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.3.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" />
+    <style>
+        @import url('css/font/stylesheet.css'); 
+
+        body {
+            background-color: #222;
+        }
+
+        .district-side {
+            width: 60px;
+            height:9.09%
+        }
+
+        .district-side > h1 {
+            font-family: Uni Sans Heavy CAPS; 
+            font-size: 2.2rem; 
+            line-height: 230%; 
+            white-space: nowrap; 
+            margin-left: 90px; 
+            display: none;
+            color: #2c2c2c;
+        }
+
+        .data-unselected{
+            color: #fdd70079; 
+            font-family: Uni Sans Thin CAPS; 
+            font-size: 2rem; 
+            pointer-events: all;
+            cursor: pointer;
+        }
+
+        .data-selected{
+            color: #fdd700; 
+            font-family: Uni Sans HEAVY CAPS;
+        }
+        ul {
+          list-style-type: none;
+          padding-left: 0;
+        }
+
+        .leaflet-container {
+    background-color:rgba(255,0,0,0.0);
+}
+    
+    </style>
+    <div id="preload" style="position: fixed; height: 100%; width: 100%; background-color: #222; z-index: 1002; pointer-events: none;">
+            <div class="h-100 d-flex justify-content-center align-items-center">
+                    <div class="row w-100 h-100 justify-content-center align-items-center">
+                        <div class="col-xl-3 pr-5">
+                            <h1 class="text-white text-center">Loading...</h1>
+                        </div>
+                    </div>
+                </div>
+        
+    </div>
+</head>
+
+<body>
+
+    <div id="mapid" style="height: 100%; width:100%"></div>
+
+
+    <script src="https://unpkg.com/leaflet@1.3.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
+    <script src="js/anime.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo"
+        crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js" integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49"
+        crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js" integrity="sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy"
+        crossorigin="anonymous"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/tilt.js/1.2.1/tilt.jquery.min.js"></script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.3/Chart.js"></script>
+
+    <script>
+        window.onload = () => {
+            anime({
+                    targets: "#preload",
+                    opacity: "0",
+                    easing: 'easeInOutQuart',
+                    duration: "800"
+                });
+        }
+
+
+        const og2016 = new XMLHttpRequest();
+        og2016.open("GET",
+            "https://gist.githubusercontent.com/MattheousDT/68f6c676cebd1b14eb98dd8ddb19dae1/raw/10f802c19a502bdee972d89af3f1b704564294f2/collisions-2016-smoll.json",
+            false);
+        og2016.send();
+
+        const stats2016 = JSON.parse(og2016.response);
+
+        const mymap = L.map('mapid').setView([54.5646351, -6.7517848], 9);
+
+        L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}', {
+            attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, <a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
+            maxZoom: 18,
+            id: 'mapbox.dark',
+            accessToken: 'pk.eyJ1IjoibWF0dGhld3dhdHQiLCJhIjoiY2pxOW1wcDhiMzM3NDQ4anl6NW1nYXU4YyJ9.oqCjGPK95L5jPdNkKlR_sQ'
+        }).addTo(mymap);
+
+        const markers = L.markerClusterGroup();
+        const geoJsonLayer = L.geoJson(stats2016, {
+            onEachFeature: function (feature, layer) {
+
+                Number.prototype.pad = function (size) {
+                    var s = String(this);
+                    while (s.length < (size || 2)) {
+                        s = "0" + s;
+                    }
+                    return s;
+                }
+
+                let district = "";
+                switch (feature.properties.a_District) {
+                    case "ANTN":
+                        district = "Antrim and Newtownabbey"
+                        break;
+                    case "ARBC":
+                        district = "Armagh City, Banbridge and Craigavon"
+                        break;
+                    case "ARND":
+                        district = "Ards and North Down"
+                        break;
+                    case "BELC":
+                        district = "Belfast"
+                        break;
+                    case "CCGL":
+                        district = "Causeway Coast and Glens"
+                        break;
+                    case "DCST":
+                        district = "Derry City and Strabane"
+                        break;
+                    case "FERO":
+                        district = "Fermanagh and Omagh"
+                        break;
+                    case "LISC":
+                        district = "Lisburn and Castlereagh"
+                        break;
+                    case "MEAN":
+                        district = "Mid and East Antrim"
+                        break;
+                    case "MIDU":
+                        district = "Mid Ulster"
+                        break;
+                    case "NEMD":
+                        district = "Newry, Mourne and Down"
+                        break;
+                    default:
+                        district = "N/A"
+                        break;
+                }
+
+                let weekday = "";
+                switch (feature.properties.a_wkday) {
+                    case "MON":
+                        weekday = "Monday"
+                        break;
+                    case "TUE":
+                        weekday = "Tuesday"
+                        break;
+                    case "WED":
+                        weekday = "Wednesday"
+                        break;
+                    case "THU":
+                        weekday = "Thursday"
+                        break;
+                    case "FRI":
+                        weekday = "Friday"
+                        break;
+                    case "SAT":
+                        weekday = "Saturday"
+                        break;
+                    case "SUN":
+                        weekday = "Sunday"
+                        break;
+                    default:
+                        weekday = "N/A"
+                        break;
+                }
+
+                const date = new Date(feature.properties.a_year, feature.properties.a_month - 1, feature.properties
+                    .a_day, feature.properties.a_hour, feature.properties.a_min);
+
+                var options = {
+                    day: 'numeric',
+                    month: 'long',
+                    year: "numeric",
+                    year: "numeric",
+                    year: "numeric"
+                };
+
+                layer.bindPopup(
+                    `
+                    <h5>Crash #${feature.properties.a_ref} in ${feature.properties.a_year}</h5>
+                    <hr>
+                <ul>
+                    <li><b>Date:</b> ${weekday}, ${date.toLocaleDateString("EN-GB", options)}</li>
+                    <li><b>Time:</b> ${feature.properties.a_hour.pad(2) + ":" + feature.properties.a_min.pad(2)}</li>
+                    <li><b>District:</b> ${district}</li>
+                    <li><b>Speed Limit:</b> ${feature.properties.a_speed}mph</li>
+                    <li style="color: #c72417"><b>${feature.properties.a_cas} ${feature.properties.a_cas === 1 ? "casualty" : "casualties"}</b></li>
+                </ul>
+                `
+                );
+            }
+        });
+        markers.addLayer(geoJsonLayer);
+        mymap.addLayer(markers);
+        mymap.fitBounds(markers.getBounds());
+    </script>
+
+</body>
+
+</html>

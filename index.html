@@ -25,6 +25,19 @@
             display: none;
             color: #222;
         }
+
+        .data-unselected{
+            color: #fdd70079; 
+            font-family: Uni Sans Thin CAPS; 
+            font-size: 2rem; 
+            pointer-events: all;
+            cursor: pointer;
+        }
+
+        .data-selected{
+            color: #fdd700; 
+            font-family: Uni Sans HEAVY CAPS;
+        }
         </style>
 </head>
 
@@ -57,7 +70,18 @@
             <path id="Rathlan" d="M796.27,41.9c-.64-.93-1.18-1.7-1.7-2.47a2.43,2.43,0,0,1,.09-2.91,37.56,37.56,0,0,0,2.15-3.46,6.89,6.89,0,0,0-.59-7.47,1.83,1.83,0,0,0-1.75-.94c-3.74.09-7.5.07-11.25.06a23.8,23.8,0,0,0-10.7,2.15,2.8,2.8,0,0,1-2,.13c-2.08-.8-4.09-1.76-6.14-2.66a5.84,5.84,0,0,1,2-4.58,18.82,18.82,0,0,1,10.15-5c1.75-.31,3.36-.08,4.52,1.78s3.4,2.43,5.69,2.36c3.84-.12,7.68,0,11.5-.2,2.45-.12,3.88,1.24,5.08,3a2.64,2.64,0,0,1,0,2c-1.36,4.18-2.77,8.33-4.21,12.48-.53,1.5-1.18,3-1.82,4.42A8.73,8.73,0,0,1,796.27,41.9Z"
                 transform="translate(-96.88 -14.64)" />
         </svg>
+
     </div>
+
+
+    <div class="chart" style="height: 40%; width: 40%; position: fixed; right: 30%; bottom:0; padding-bottom: 2.5%; padding-right: 2.5%; pointer-events: none;">
+        <canvas id="gender-chart" style="pointer-events:all;"></canvas>
+    </div>
+
+    <div class="chart" style="height: 40%; width: 40%; position: fixed; right: 30%; bottom:0; padding-bottom: 2.5%; padding-right: 2.5%; pointer-events: none;">
+        <canvas id="weekday-chart" style="pointer-events:all;"></canvas>
+    </div>
+
 
     <div id="key-facts" style="position: fixed; margin-left: 150px; z-index: 20; pointer-events: none;">
 
@@ -69,11 +93,11 @@
     </div>
 
     <div id="data-selector" style="position: fixed; bottom: 0; margin-left: 150px; z-index: 20; pointer-events: none;">
-        <h1 style="color: #fdd70079; font-family: Uni Sans Thin CAPS; font-size: 2rem; transform: translateY(20px)">
+        <h1 id="time-selector" class="data-unselected" style="transform: translateY(20px)">
             Time</h1>
-        <h1 style="color: #fdd700; font-family: Uni Sans HEAVY CAPS; font-size: 2rem; transform: translateY(10px)">
+        <h1 id="weekday-selector" class="data-unselected" style="transform: translateY(10px)">
             WEEKDAY</h1>
-        <h1 style="color: #fdd70079; font-family: Uni Sans Thin CAPS; font-size: 2rem;transform: translateY()">
+        <h1 id="gender-selector" class="data-unselected" style="transform: translateY()">
             Gender</h1>
     </div>
 
@@ -123,6 +147,8 @@
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js" integrity="sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy"
         crossorigin="anonymous"></script>
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/tilt.js/1.2.1/tilt.jquery.min.js"></script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.3/Chart.js"></script>
     <script>
         const colours = [
             "#f6892b",
@@ -307,6 +333,82 @@
             $("#crashes").text(crashes);
             $("#casualties").text(casualties);
         });
+
+        $("#data-selector").children().click(function () {
+
+            $(this).parent().children().removeClass("data-selected");
+            $(this).addClass("data-selected");
+
+            //Gender Selector
+            if (this.id === "gender-selector") {
+
+                $(".chart").hide();
+                $("#gender-chart").parent().show()
+
+                const ctx = document.getElementById("gender-chart").getContext('2d');
+                const myLineChart = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ["Male", "Female"],
+                        datasets: [{
+                            data: [300, 50],
+                            backgroundColor: ["#00cbff", "#ff44ac"],
+                            hoverBackgroundColor: ["#46d7fc", "#ff75c1"],
+                            borderColor: "#222",
+                            borderWidth: 3
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        legend: {
+                            display: false
+                        },
+                        circumference: Math.PI,
+                        rotation: 1 * Math.PI
+                    }
+                });
+            };
+
+            //Weekday Selector
+            if (this.id === "weekday-selector") {
+
+                $(".chart").hide();
+                $("#weekday-chart").parent().show()
+
+                const ctx = document.getElementById("weekday-chart").getContext('2d');
+                const myLineChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday",
+                            "Sunday"
+                        ],
+                        datasets: [{
+                            data: [300, 50, 300, 50, 300, 50, 300],
+                            backgroundColor: ["#00cbff", "#ff44ac", "#00cbff", "#ff44ac",
+                                "#00cbff", "#ff44ac", "#00cbff", "#ff44ac"
+                            ],
+                            hoverBackgroundColor: ["#46d7fc", "#ff75c1"],
+                            borderColor: "#222",
+                            borderWidth: 3
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        legend: {
+                            display: false
+                        },
+                        scales: {
+                            yAxes: [{
+                                ticks: {
+                                    beginAtZero: true
+                                }
+                            }]
+                        }
+
+                    }
+                });
+            }
+        })
     </script>
 </body>
 
