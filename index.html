@@ -79,6 +79,10 @@
     </div>
 
     <div class="chart" style="height: 40%; width: 40%; position: fixed; right: 30%; bottom:0; padding-bottom: 2.5%; padding-right: 2.5%; pointer-events: none;">
+        <canvas id="month-chart" style="pointer-events:all;"></canvas>
+    </div>
+
+    <div class="chart" style="height: 40%; width: 40%; position: fixed; right: 30%; bottom:0; padding-bottom: 2.5%; padding-right: 2.5%; pointer-events: none;">
         <canvas id="weekday-chart" style="pointer-events:all;"></canvas>
     </div>
 
@@ -92,9 +96,20 @@
             Casualties</h1>
     </div>
 
-    <div id="data-selector" style="position: fixed; bottom: 0; margin-left: 150px; z-index: 20; pointer-events: none;">
-        <h1 id="time-selector" class="data-unselected" style="transform: translateY(20px)">
-            Time</h1>
+    <div id="year-selector" style="position: fixed; top:0; right: 0; text-align: right; margin-right: 20px; z-index: 20; pointer-events: none;">
+        <h1 id="date-2016" class="data-unselected" style="transform: translateY(20px)">
+            2016</h1>
+        <h1 id="date-2015" class="data-unselected" style="transform: translateY(10px)">
+            2015</h1>
+        <h1 id="date-2014" class="data-unselected" style="transform: translateY()">
+            2014</h1>
+        <h1 id="date-2013" class="data-unselected" style="transform: translateY(-10px)">
+            2013</h1>
+    </div>
+
+    <div id="data-selector" style="position: fixed; bottom: 0; right:0; text-align: right; margin-right: 20px; z-index: 20; pointer-events: none;">
+        <h1 id="month-selector" class="data-unselected" style="transform: translateY(20px)">
+            Month</h1>
         <h1 id="weekday-selector" class="data-unselected" style="transform: translateY(10px)">
             WEEKDAY</h1>
         <h1 id="gender-selector" class="data-unselected" style="transform: translateY()">
@@ -150,6 +165,7 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.3/Chart.js"></script>
     <script>
+        //District Colours
         const colours = [
             "#f6892b",
             "#fec135",
@@ -164,40 +180,66 @@
             "#f0e6b3"
         ]
 
-        const og2016 = new XMLHttpRequest();
-        og2016.open("GET",
-            "https://gist.githubusercontent.com/MattheousDT/494c3110ce7cee57a75586b35e35a25d/raw/feea32cfe0f34daa305cbf0df293bceba4733806/collisions-2016.json",
+        //Get Request
+        const ogJson = new XMLHttpRequest();
+        ogJson.open("GET",
+            "https://raw.githubusercontent.com/MattheousDT/crash-ni/64dd82689216e1fcb21fab58f43baf069f13320a/json/formatted.json",
             false);
-        og2016.send();
+        ogJson.send();
 
-        const stats2016 = JSON.parse(og2016.response);
+        const stats = JSON.parse(ogJson.response);
 
-        let alldistricts2016 = []
+        //List of districts
+        let districts = [];
 
-        for (let d of stats2016.features) {
-            let e = d.properties.a_District
-
-            alldistricts2016.push(d.properties.a_District)
+        for (let i = 0; i < stats.y2013.length; i++) {
+            districts.push(stats.y2013[i].district)
         }
 
-        count = function (ary, classifier) {
-            classifier = classifier || String;
-            return ary.reduce(function (counter, item) {
-                const p = classifier(item);
-                counter[p] = counter.hasOwnProperty(p) ? counter[p] + 1 : 1;
-                return counter;
-            }, {})
-        };
+        //Year Update
 
-        countDistricts = count(alldistricts2016, function (item) {
-            return item
-        });
+        let selectedYear;
+        let yearStats;
+        let casualties = [];
+        let gaySquared;
 
-        const districtArray = Object.keys(countDistricts).map(k => [k, countDistricts[k]]).sort((a, b) => b[1] - a[1])
+        function updateYear(y) {
 
-        for (let u = 0; u < districtArray.length; u++) {
-            $("#" + districtArray[u][0] + "-map").attr("fill", colours[u])
+            if (selectedYear === undefined) {
+                selectedYear = 2016
+            } else {
+                selectedYear = y
+            }
+            $("#year-selector").children().removeClass("data-selected");
+            $("#date-" + selectedYear).addClass("data-selected");
+
+            selectedYear = stats["y" + selectedYear];
+
+
+            casualties = [];
+
+            for (let c = 0; c < selectedYear.length; c++) {
+                casualties.push([selectedYear[c].district, selectedYear[c].casualtyTotal])
+            }
+
+            casualties.sort();
+
+            for (let u = 0; u < casualties.length; u++) {
+                $("#" + districts[u] + "-map").attr("fill", colours[u])
+            }
         }
+
+        //First Load
+        updateYear();
+
+        //OnClick
+        $("#year-selector").children().click(function () {
+
+            let urma = $(this).attr("id").substring(5);
+            updateYear(urma);
+            monthChart();
+        })
+
 
         $("#map").children().mouseenter(function () {
             $(this).attr("fill-opacity", "0.5");
@@ -318,21 +360,124 @@
                 }, 400)
 
             //Stats Update
+            let crashes = 0;
+            let gay = specificDistrict.substring(1, 5);
 
-            let casualties = 0
 
-            let crashes = 0
-
-            for (let c of stats2016.features) {
-                if (c.properties.a_District === specificDistrict.substring(1, 5)) {
-                    crashes++;
-                    casualties += c.properties.a_cas;
+            for (let g = 0; g < selectedYear.length; g++) {
+                if (selectedYear[g].district === gay) {
+                    gaySquared = g
                 }
             }
 
+            for (let i = 0; i < selectedYear[gaySquared].crashes.length; i++) {
+                crashes++
+            }
+
+
             $("#crashes").text(crashes);
-            $("#casualties").text(casualties);
+            $("#casualties").text(selectedYear[gaySquared].casualtyTotal);
+
+            monthChart();
         });
+        $(".chart").hide();
+        //Chart Data Bullshit
+        let months = [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+
+        function monthChart() {
+
+            for (m = 0; m < selectedYear[gaySquared].crashes.length; m++) {
+
+                switch (selectedYear[gaySquared].crashes[m].month) {
+                    case 1:
+                        months[0]++
+                        break;
+                    case 2:
+                        months[1]++
+                        break;
+                    case 3:
+                        months[2]++
+                        break;
+                    case 4:
+                        months[3]++
+                        break;
+                    case 5:
+                        months[4]++
+                        break;
+                    case 6:
+                        months[5]++
+                        break;
+                    case 7:
+                        months[6]++
+                        break;
+                    case 8:
+                        months[7]++
+                        break;
+                    case 9:
+                        months[8]++
+                        break;
+                    case 10:
+                        months[9]++
+                        break;
+                    case 11:
+                        months[10]++
+                        break;
+                    case 12:
+                        months[11]++
+                        break;
+                    default:
+                        break;
+                }
+            }
+
+                console.log(months)
+
+                const ctx = document.getElementById("month-chart").getContext('2d');
+                const newMonthChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: ["January", "Ferbruary", "March", "April", "May", "June", "July",
+                            "August", "September", "October", "November", "December"
+                        ],
+                        datasets: [{
+                            data: months,
+                            backgroundColor: ["#00cbff", "#ff44ac", "#00cbff", "#ff44ac",
+                                "#00cbff", "#ff44ac", "#00cbff", "#ff44ac"
+                            ],
+                            borderColor: "#222",
+                            borderWidth: 3
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        legend: {
+                            display: false
+                        },
+                        scales: {
+                            yAxes: [{
+                                ticks: {
+                                    beginAtZero: true
+                                }
+                            }]
+                        }
+
+                    }
+                });
+        }
+
 
         $("#data-selector").children().click(function () {
 
@@ -369,11 +514,61 @@
                 });
             };
 
+            //Month
+            if (this.id === "month-selector") {
+                monthChart();
+                $(".chart").hide();
+                $("#month-chart").parent().show();
+                
+            };
+
             //Weekday Selector
             if (this.id === "weekday-selector") {
 
                 $(".chart").hide();
                 $("#weekday-chart").parent().show()
+
+                let weekdays = [
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0
+                ]
+
+
+                for (w = 0; w < selectedYear[gaySquared].crashes.length; w++) {
+
+                    switch (selectedYear[gaySquared].crashes[w].weekday) {
+                        case "MON":
+                            weekdays[0]++
+                            break;
+                        case "TUE":
+                            weekdays[1]++
+                            break;
+                        case "WED":
+                            weekdays[2]++
+                            break;
+                        case "THU":
+                            weekdays[3]++
+                            break;
+                        case "FRI":
+                            weekdays[4]++
+                            break;
+                        case "SAT":
+                            weekdays[5]++
+                            break;
+                        case "SUN":
+                            weekdays[6]++
+                            break;
+                        default:
+                            break;
+                    }
+                }
+
+                console.log(weekdays)
 
                 const ctx = document.getElementById("weekday-chart").getContext('2d');
                 const myLineChart = new Chart(ctx, {
@@ -383,7 +578,7 @@
                             "Sunday"
                         ],
                         datasets: [{
-                            data: [300, 50, 300, 50, 300, 50, 300],
+                            data: weekdays,
                             backgroundColor: ["#00cbff", "#ff44ac", "#00cbff", "#ff44ac",
                                 "#00cbff", "#ff44ac", "#00cbff", "#ff44ac"
                             ],
