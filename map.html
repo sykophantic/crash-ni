@@ -65,6 +65,14 @@
 
 <body>
 
+        <div id="page-selector" style="position: fixed; top:0; right: 0; text-align: right; margin-top: 30px; margin-right: 20px; z-index: 1001">
+                <h1 class="data-unselected data-selected" style="float: right; margin-left: 10px">
+                    MAP</h1>
+                <img onclick="overviewPage()" src="img/switch_right.png" style="height: 3rem; float: right; transform: translateY(-0.5rem); cursor: pointer">
+                <h1 onclick="overviewPage()"  id="" class="data-unselected" style="float: right; margin-right: 10px">
+                    OVERVIEW</h1>
+            </div>
+
     <div id="mapid" style="height: 100%; width:100%"></div>
 
 
@@ -91,6 +99,9 @@
                 });
         }
 
+        function overviewPage(){
+            document.location.href = "index.html";
+        }
 
         const og2016 = new XMLHttpRequest();
         og2016.open("GET",

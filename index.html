@@ -38,6 +38,8 @@
             color: #fdd700; 
             font-family: Uni Sans HEAVY CAPS;
         }
+
+        
         </style>
 </head>
 
@@ -73,30 +75,37 @@
 
     </div>
 
-
-    <div class="chart" style="height: 40%; width: 40%; position: fixed; right: 30%; bottom:0; padding-bottom: 2.5%; padding-right: 2.5%; pointer-events: none;">
-        <canvas id="gender-chart" style="pointer-events:all;"></canvas>
-    </div>
-
-    <div class="chart" style="height: 40%; width: 40%; position: fixed; right: 30%; bottom:0; padding-bottom: 2.5%; padding-right: 2.5%; pointer-events: none;">
+    <div class="chart" style="display: none; height: 40%; width: 60%; position: fixed; left: 35%; bottom:20%; padding-bottom: 2.5%; padding-right: 2.5%; pointer-events: none; z-index: 30">
         <canvas id="month-chart" style="pointer-events:all;"></canvas>
     </div>
 
-    <div class="chart" style="height: 40%; width: 40%; position: fixed; right: 30%; bottom:0; padding-bottom: 2.5%; padding-right: 2.5%; pointer-events: none;">
+    <div class="chart" style="display: none; height: 40%; width: 60%; position: fixed; left: 35%; bottom:20%; padding-bottom: 2.5%; padding-right: 2.5%; pointer-events: none; z-index: 30">
         <canvas id="weekday-chart" style="pointer-events:all;"></canvas>
+    </div>
+
+    <div class="chart" style="display:none; height: 40%; width: 60%; position: fixed; left: 35%; bottom:20%; padding-bottom: 2.5%; padding-right: 2.5%; pointer-events: none; z-index: 30">
+        <canvas id="speed-chart" style="pointer-events:all;"></canvas>
     </div>
 
 
     <div id="key-facts" style="position: fixed; margin-left: 150px; z-index: 20; pointer-events: none;">
 
-        <h1 style="color: #fdd700; font-family: Uni Sans Heavy CAPS; font-size: 6rem;"><span id="crashes">6225</span>
+        <h1 style="color: #fdd700; font-family: Uni Sans Heavy CAPS; font-size: 6rem;"><span id="crashes"></span>
             Crashes</h1>
         <h1 style="color: #d92525; font-family: Uni Sans Heavy CAPS; font-size: 4.5rem;transform: translateY(-40px)"><span
-                style="font-family:Uni Sans Thin CAPS; color: white;">RESULTING IN </span><span id="casualties">9591</span>
+                style="font-family:Uni Sans Thin CAPS; color: white;">RESULTING IN </span><span id="casualties"></span>
             Casualties</h1>
     </div>
 
-    <div id="year-selector" style="position: fixed; top:0; right: 0; text-align: right; margin-right: 20px; z-index: 20; pointer-events: none;">
+    <div id="page-selector" style="position: fixed; top:0; right: 0; text-align: right; margin-top: 30px; margin-right: 20px; z-index: 20">
+        <h1 onclick="mapPage()" class="data-unselected" style="float: right; margin-left: 10px">
+            MAP</h1>
+        <img onclick="mapPage()" src="img/switch_left.png" style="height: 3rem; float: right; transform: translateY(-0.5rem); cursor: pointer">
+        <h1 id="" class="data-unselected data-selected" style="float: right; margin-right: 10px">
+            OVERVIEW</h1>
+    </div>
+
+    <div id="year-selector" style="position: fixed; top:200; right: 0; text-align: right; margin-right: 20px; z-index: 20; pointer-events: none;">
         <h1 id="date-2016" class="data-unselected" style="transform: translateY(20px)">
             2016</h1>
         <h1 id="date-2015" class="data-unselected" style="transform: translateY(10px)">
@@ -109,11 +118,11 @@
 
     <div id="data-selector" style="position: fixed; bottom: 0; right:0; text-align: right; margin-right: 20px; z-index: 20; pointer-events: none;">
         <h1 id="month-selector" class="data-unselected" style="transform: translateY(20px)">
-            Month</h1>
+            MONTH</h1>
         <h1 id="weekday-selector" class="data-unselected" style="transform: translateY(10px)">
             WEEKDAY</h1>
-        <h1 id="gender-selector" class="data-unselected" style="transform: translateY()">
-            Gender</h1>
+        <h1 id="speed-selector" class="data-unselected" style="transform: translateY()">
+            SPEED</h1>
     </div>
 
     <div id="district-sidebar" style="height: 100%; position: fixed; z-index: 30;">
@@ -165,6 +174,9 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.3/Chart.js"></script>
     <script>
+        function mapPage() {
+            document.location.href = "map.html"
+        }
         //District Colours
         const colours = [
             "#f6892b",
@@ -202,6 +214,8 @@
         let yearStats;
         let casualties = [];
         let gaySquared;
+        let specificDistrict;
+        let selectedChart;
 
         function updateYear(y) {
 
@@ -213,20 +227,69 @@
             $("#year-selector").children().removeClass("data-selected");
             $("#date-" + selectedYear).addClass("data-selected");
 
+
             selectedYear = stats["y" + selectedYear];
 
 
-            casualties = [];
+            crashes = [];
 
             for (let c = 0; c < selectedYear.length; c++) {
-                casualties.push([selectedYear[c].district, selectedYear[c].casualtyTotal])
+                crashes.push([selectedYear[c].district, selectedYear[c].crashes.length])
             }
 
-            casualties.sort();
+            crashes.sort((a, b) => b[1] > a[1] ? 1 : -1);
 
-            for (let u = 0; u < casualties.length; u++) {
-                $("#" + districts[u] + "-map").attr("fill", colours[u])
+            for (let u = 0; u < crashes.length; u++) {
+                $("#" + crashes[u][0] + "-map").attr("fill", colours[u]);
+                $("#" + crashes[u][0] + "-side").css("background-color", colours[u]);
             }
+
+
+            if ($("#district-sidebar").hasClass("focus") === false) {
+                //Stats Update
+                let crashesTotal = 0;
+                let casualtyTotal = 0;
+
+                for (let i = 0; i < selectedYear.length; i++) {
+                    crashesTotal = crashesTotal + selectedYear[i].crashes.length
+                }
+
+                for (let t = 0; t < selectedYear.length; t++) {
+                    casualtyTotal = casualtyTotal + selectedYear[t].casualtyTotal
+                }
+
+                $("#crashes").text(crashesTotal);
+                $("#casualties").text(casualtyTotal);
+            } else {
+                //Stats Update
+
+                let specificDistrict;
+
+                for (let d = 0; d < document.getElementById("district-sidebar").children.length; d++) {
+                    if (document.getElementById("district-sidebar").children[d].classList.contains("unselected") ===
+                        false) {
+                        specificDistrict = document.getElementById("district-sidebar").children[d].id.substring(0, 4);
+                    }
+                }
+
+                let crashes = 0;
+
+
+                for (let g = 0; g < selectedYear.length; g++) {
+                    if (selectedYear[g].district === specificDistrict) {
+                        gaySquared = g
+                    }
+                }
+
+                for (let i = 0; i < selectedYear[gaySquared].crashes.length; i++) {
+                    crashes++
+                }
+
+
+                $("#crashes").text(crashes);
+                $("#casualties").text(selectedYear[gaySquared].casualtyTotal);
+            }
+
         }
 
         //First Load
@@ -237,7 +300,6 @@
 
             let urma = $(this).attr("id").substring(5);
             updateYear(urma);
-            monthChart();
         })
 
 
@@ -258,8 +320,14 @@
         })
 
         $("#map").children().mouseleave(function () {
-            $(this).attr("fill-opacity", "1");
+            if ($(this).hasClass("greyed") !== true) {
 
+                $(this).attr("fill-opacity", "1");
+
+
+            } else {
+                $(this).attr("fill-opacity", "0.1");
+            }
             const side = "#" + this.id.substring(0, 5) + "side";
 
             if ($(side).hasClass("unselected") === true) {
@@ -275,7 +343,7 @@
 
         $(".district-side").mouseenter(function () {
             if ($(this).hasClass("unselected") === true) {
-                const specificDistrict = "#" + this.id
+                specificDistrict = "#" + this.id
 
                 anime({
                     targets: specificDistrict,
@@ -287,7 +355,7 @@
         });
         $(".district-side").mouseleave(function () {
             if ($(this).hasClass("unselected") === true) {
-                const specificDistrict = "#" + this.id
+                pecificDistrict = "#" + this.id
 
                 anime({
                     targets: specificDistrict,
@@ -301,20 +369,27 @@
         //Side is clicked
         $(".district-side").click(function () {
 
+            $("#district-sidebar").addClass("focus")
             //Add the class to everyone
             $(".district-side").addClass("unselected").children().hide();
 
+            $("#map").children().addClass("greyed");
+            $("#map").children().removeClass("full");
             $("#map").children().attr("fill-opacity", "0.1")
 
             //Then remove from this specific one
             $(this).removeClass("unselected");
 
-            const specificDistrict = "#" + this.id
+            specificDistrict = "#" + this.id
 
             $(specificDistrict.substring(0, 6) + "map").attr("fill-opacity", "1")
-
+            $(specificDistrict.substring(0, 6) + "map").removeClass("greyed");
+            $(specificDistrict.substring(0, 6) + "map").addClass("full")
 
             const textWidth = $(specificDistrict).children().first().width() + 130
+
+            const textHeight = $(specificDistrict).height();
+            $(specificDistrict).children().css("line-height", textHeight + "px")
 
             //Bring all the bars back
             anime({
@@ -334,8 +409,9 @@
             });
 
 
-            if (specificDistrict === "#ARBC-side" || specificDistrict === "#BELC-side") {
-                const distance = $(specificDistrict).position().top + 90;
+            if (specificDistrict === "#ARBC-side" || specificDistrict === "#BELC-side" || specificDistrict ===
+                "#NEMD-side") {
+                const distance = $(specificDistrict).position().top + 90 + "px";
 
                 anime({
                     targets: "#key-facts",
@@ -378,232 +454,396 @@
             $("#crashes").text(crashes);
             $("#casualties").text(selectedYear[gaySquared].casualtyTotal);
 
-            monthChart();
+            if (selectedChart === undefined){
+                return
+            } else {
+                updateData(selectedChart)
+            }
         });
-        $(".chart").hide();
-        //Chart Data Bullshit
-        let months = [
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0
-        ]
 
-        function monthChart() {
+        $("#data-selector").children().click(function(){
+            $("#data-selector").children().removeClass("data-selected")
+            $(this).addClass("data-selected");
+            selectedChart = $(this).attr("id").split("-")[0];
 
-            for (m = 0; m < selectedYear[gaySquared].crashes.length; m++) {
+            if (specificDistrict === undefined){
+                alert("Please select a district on the left first")
+            } else {
+                updateData(selectedChart);
+            }
+            
+        })
+        
 
-                switch (selectedYear[gaySquared].crashes[m].month) {
-                    case 1:
-                        months[0]++
-                        break;
-                    case 2:
-                        months[1]++
-                        break;
-                    case 3:
-                        months[2]++
-                        break;
-                    case 4:
-                        months[3]++
-                        break;
-                    case 5:
-                        months[4]++
-                        break;
-                    case 6:
-                        months[5]++
-                        break;
-                    case 7:
-                        months[6]++
-                        break;
-                    case 8:
-                        months[7]++
-                        break;
-                    case 9:
-                        months[8]++
-                        break;
-                    case 10:
-                        months[9]++
-                        break;
-                    case 11:
-                        months[10]++
-                        break;
-                    case 12:
-                        months[11]++
-                        break;
-                    default:
-                        break;
+        //Month Chart
+        const monthChartSelector = document.getElementById("month-chart").getContext('2d');
+        const monthChart = new Chart(monthChartSelector, {
+            type: 'bar',
+            data: {
+                labels: ["January", "February", "March", "April", "May", "June", "July",
+                    "August", "September", "October", "November", "December"
+                ],
+                datasets: [{
+                        label: '2016',
+                        backgroundColor: "#B21212",
+                        data: []
+                    }, {
+                        label: '2015',
+                        backgroundColor: "#FFFC19",
+                        data: []
+                    }, {
+                        label: '2014',
+                        backgroundColor: "#1485CC",
+                        data: []
+                    },
+                    {
+                        label: '2013',
+                        backgroundColor: "#C700FF",
+                        data: []
+                    }
+                ]
+
+            },
+            options: {
+                scales: {
+                    xAxes: [{
+                        stacked: true,
+                        ticks: {
+                            fontColor: "white"
+                        }
+                    }],
+                    yAxes: [{
+                        stacked: true,
+                        ticks: {
+                            fontColor: "white"
+                        }
+                    }]
+                },
+                legend: {
+                    labels: {
+                        // This more specific font property overrides the global property
+                        fontColor: 'white',
+                        fontSize: 16
+                    }
+                },
+                tooltips: {
+                    mode: 'index'
                 }
             }
+        });
 
-                console.log(months)
-
-                const ctx = document.getElementById("month-chart").getContext('2d');
-                const newMonthChart = new Chart(ctx, {
-                    type: 'bar',
-                    data: {
-                        labels: ["January", "Ferbruary", "March", "April", "May", "June", "July",
-                            "August", "September", "October", "November", "December"
-                        ],
-                        datasets: [{
-                            data: months,
-                            backgroundColor: ["#00cbff", "#ff44ac", "#00cbff", "#ff44ac",
-                                "#00cbff", "#ff44ac", "#00cbff", "#ff44ac"
-                            ],
-                            borderColor: "#222",
-                            borderWidth: 3
-                        }]
+        //Weekday Chart
+        const weekdayChartSelector = document.getElementById("weekday-chart").getContext('2d');
+        const weekdayChart = new Chart(weekdayChartSelector, {
+            type: 'bar',
+            data: {
+                labels: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
+                datasets: [{
+                        label: '2016',
+                        backgroundColor: "#B21212",
+                        data: []
+                    }, {
+                        label: '2015',
+                        backgroundColor: "#FFFC19",
+                        data: []
+                    }, {
+                        label: '2014',
+                        backgroundColor: "#1485CC",
+                        data: []
                     },
-                    options: {
-                        responsive: true,
-                        legend: {
-                            display: false
-                        },
-                        scales: {
-                            yAxes: [{
-                                ticks: {
-                                    beginAtZero: true
-                                }
-                            }]
+                    {
+                        label: '2013',
+                        backgroundColor: "#C700FF",
+                        data: []
+                    }
+                ]
+
+            },
+            options: {
+                scales: {
+                    xAxes: [{
+                        stacked: true,
+                        ticks: {
+                            fontColor: "white"
                         }
-
+                    }],
+                    yAxes: [{
+                        stacked: true,
+                        ticks: {
+                            fontColor: "white"
+                        }
+                    }]
+                },
+                legend: {
+                    labels: {
+                        // This more specific font property overrides the global property
+                        fontColor: 'white',
+                        fontSize: 16
                     }
-                });
-        }
+                },
+                tooltips: {
+                    mode: 'index'
+                }
+            }
+        });
 
-
-        $("#data-selector").children().click(function () {
-
-            $(this).parent().children().removeClass("data-selected");
-            $(this).addClass("data-selected");
-
-            //Gender Selector
-            if (this.id === "gender-selector") {
-
-                $(".chart").hide();
-                $("#gender-chart").parent().show()
-
-                const ctx = document.getElementById("gender-chart").getContext('2d');
-                const myLineChart = new Chart(ctx, {
-                    type: 'doughnut',
-                    data: {
-                        labels: ["Male", "Female"],
-                        datasets: [{
-                            data: [300, 50],
-                            backgroundColor: ["#00cbff", "#ff44ac"],
-                            hoverBackgroundColor: ["#46d7fc", "#ff75c1"],
-                            borderColor: "#222",
-                            borderWidth: 3
-                        }]
+        //Speed Chart
+        const speedChartSelector = document.getElementById("speed-chart").getContext('2d');
+        const speedChart = new Chart(speedChartSelector, {
+            type: 'doughnut',
+            data: {
+                labels: ["5mph", "10mph", "15mph", "20mph", "30mph", "40mph", "50mph", "60mph", "70mph"],
+                datasets: [{
+                        label: '2016',
+                        backgroundColor: ["#B21212", "#FFFC19", "#1485CC", "#C700FF", "#fc2920", "#7b39f4",
+                            "#10f926", "#ffadb9", "#bc43cc"
+                        ],
+                        data: [],
+                        borderColor: "#222",
+                        borderWidth: 2
+                    }, {
+                        label: '2015',
+                        backgroundColor: ["#B21212", "#FFFC19", "#1485CC", "#C700FF", "#fc2920", "#7b39f4",
+                            "#10f926", "#ffadb9", "#bc43cc"
+                        ],
+                        data: [],
+                        borderColor: "#222",
+                        borderWidth: 2
+                    }, {
+                        label: '2014',
+                        backgroundColor: ["#B21212", "#FFFC19", "#1485CC", "#C700FF", "#fc2920", "#7b39f4",
+                            "#10f926", "#ffadb9", "#bc43cc"
+                        ],
+                        data: [],
+                        borderColor: "#222",
+                        borderWidth: 2
                     },
-                    options: {
-                        responsive: true,
-                        legend: {
-                            display: false
-                        },
-                        circumference: Math.PI,
-                        rotation: 1 * Math.PI
+                    {
+                        label: '2013',
+                        backgroundColor: ["#B21212", "#FFFC19", "#1485CC", "#C700FF", "#fc2920", "#7b39f4",
+                            "#10f926", "#ffadb9", "#bc43cc"
+                        ],
+                        data: [],
+                        borderColor: "#222",
+                        borderWidth: 2
                     }
-                });
-            };
+                ]
 
-            //Month
-            if (this.id === "month-selector") {
-                monthChart();
-                $(".chart").hide();
-                $("#month-chart").parent().show();
-                
-            };
+            },
+            options: {
+                tooltips: {
+                    
+                    callbacks: {
+                        label: function (tooltipItem, data) {
+                            const dslabels = data.labels[tooltipItem.index];
+                            const dataset = data.datasets[tooltipItem.datasetIndex];
+                            const dslabelamt = dataset.data[tooltipItem.index];
+                            return data.datasets[tooltipItem.datasetIndex].label + ' | ' + dslabels + ': ' +
+                                dslabelamt;
+                        }
+                    }
+                },
+                legend: {
+                    labels: {
+                        // This more specific font property overrides the global property
+                        fontColor: 'white',
+                        fontSize: 16
+                    }
+                },
+                circumference: Math.PI,
+                rotation: 1 * Math.PI
+            }
+        });
 
-            //Weekday Selector
-            if (this.id === "weekday-selector") {
+        function updateData(name) {
+            $(".chart").hide();
+            $("#" + name + "-chart").parent().show()
 
-                $(".chart").hide();
-                $("#weekday-chart").parent().show()
-
-                let weekdays = [
-                    0,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0
+            //Update Month Chart
+            if (name === "month") {
+                let districtName = specificDistrict.substring(1, 5);
+                let years = [2016, 2015, 2014, 2013]
+                let yearStats = [
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
                 ]
 
 
-                for (w = 0; w < selectedYear[gaySquared].crashes.length; w++) {
-
-                    switch (selectedYear[gaySquared].crashes[w].weekday) {
-                        case "MON":
-                            weekdays[0]++
-                            break;
-                        case "TUE":
-                            weekdays[1]++
-                            break;
-                        case "WED":
-                            weekdays[2]++
-                            break;
-                        case "THU":
-                            weekdays[3]++
-                            break;
-                        case "FRI":
-                            weekdays[4]++
-                            break;
-                        case "SAT":
-                            weekdays[5]++
-                            break;
-                        case "SUN":
-                            weekdays[6]++
-                            break;
-                        default:
-                            break;
+                for (let y = 0; y < years.length; y++) {
+                    for (let a = 0; a < stats["y" + years[y]].length; a++) {
+                        if (stats["y" + years[y]][a].district === districtName) {
+                            for (let b = 0; b < stats["y" + years[y]][a].crashes.length; b++) {
+                                switch (stats["y" + years[y]][a].crashes[b].month) {
+                                    case 1:
+                                        yearStats[y][0]++
+                                        break;
+                                    case 2:
+                                        yearStats[y][1]++
+                                        break;
+                                    case 3:
+                                        yearStats[y][2]++
+                                        break;
+                                    case 4:
+                                        yearStats[y][3]++
+                                        break;
+                                    case 5:
+                                        yearStats[y][4]++
+                                        break;
+                                    case 6:
+                                        yearStats[y][5]++
+                                        break;
+                                    case 7:
+                                        yearStats[y][6]++
+                                        break;
+                                    case 8:
+                                        yearStats[y][7]++
+                                        break;
+                                    case 9:
+                                        yearStats[y][8]++
+                                        break;
+                                    case 10:
+                                        yearStats[y][9]++
+                                        break;
+                                    case 11:
+                                        yearStats[y][10]++
+                                        break;
+                                    case 12:
+                                        yearStats[y][11]++
+                                        break;
+                                    default:
+                                        break;
+                                }
+                            }
+                        }
                     }
                 }
+                monthChart.data.datasets[0].data = yearStats[0];
+                monthChart.data.datasets[1].data = yearStats[1];
+                monthChart.data.datasets[2].data = yearStats[2];
+                monthChart.data.datasets[3].data = yearStats[3];
+                monthChart.update();
 
-                console.log(weekdays)
-
-                const ctx = document.getElementById("weekday-chart").getContext('2d');
-                const myLineChart = new Chart(ctx, {
-                    type: 'bar',
-                    data: {
-                        labels: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday",
-                            "Sunday"
-                        ],
-                        datasets: [{
-                            data: weekdays,
-                            backgroundColor: ["#00cbff", "#ff44ac", "#00cbff", "#ff44ac",
-                                "#00cbff", "#ff44ac", "#00cbff", "#ff44ac"
-                            ],
-                            hoverBackgroundColor: ["#46d7fc", "#ff75c1"],
-                            borderColor: "#222",
-                            borderWidth: 3
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        legend: {
-                            display: false
-                        },
-                        scales: {
-                            yAxes: [{
-                                ticks: {
-                                    beginAtZero: true
-                                }
-                            }]
-                        }
-
-                    }
-                });
             }
-        })
+
+            //Update Weekday Chart
+            if (name === "weekday") {
+                let districtName = specificDistrict.substring(1, 5);
+                let years = [2016, 2015, 2014, 2013]
+                let weekStats = [
+                    [0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0]
+                ]
+
+
+                for (let y = 0; y < years.length; y++) {
+                    for (let a = 0; a < stats["y" + years[y]].length; a++) {
+                        if (stats["y" + years[y]][a].district === districtName) {
+                            for (let b = 0; b < stats["y" + years[y]][a].crashes.length; b++) {
+                                switch (stats["y" + years[y]][a].crashes[b].weekday) {
+                                    case "MON":
+                                        weekStats[y][0]++
+                                        break;
+                                    case "TUE":
+                                        weekStats[y][1]++
+                                        break;
+                                    case "WED":
+                                        weekStats[y][2]++
+                                        break;
+                                    case "THU":
+                                        weekStats[y][3]++
+                                        break;
+                                    case "FRI":
+                                        weekStats[y][4]++
+                                        break;
+                                    case "SAT":
+                                        weekStats[y][5]++
+                                        break;
+                                    case "SUN":
+                                        weekStats[y][6]++
+                                        break;
+                                    default:
+                                        break;
+                                }
+                            }
+                        }
+                    }
+                }
+                weekdayChart.data.datasets[0].data = weekStats[0];
+                weekdayChart.data.datasets[1].data = weekStats[1];
+                weekdayChart.data.datasets[2].data = weekStats[2];
+                weekdayChart.data.datasets[3].data = weekStats[3];
+                weekdayChart.update();
+            }
+
+            //Update Weekday Chart
+            if (name === "speed") {
+                let districtName = specificDistrict.substring(1, 5);
+                let years = [2016, 2015, 2014, 2013]
+                let speedStats = [
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0]
+                ]
+
+
+                for (let y = 0; y < years.length; y++) {
+                    for (let a = 0; a < stats["y" + years[y]].length; a++) {
+                        if (stats["y" + years[y]][a].district === districtName) {
+                            for (let b = 0; b < stats["y" + years[y]][a].crashes.length; b++) {
+                                switch (stats["y" + years[y]][a].crashes[b].speed) {
+                                    case 5:
+                                        speedStats[y][0]++
+                                        break;
+                                    case 10:
+                                        speedStats[y][1]++
+                                        break;
+                                    case 15:
+                                        speedStats[y][2]++
+                                        break;
+                                    case 20:
+                                        speedStats[y][3]++
+                                        break;
+                                    case 30:
+                                        speedStats[y][4]++
+                                        break;
+                                    case 40:
+                                        speedStats[y][5]++
+                                        break;
+                                    case 50:
+                                        speedStats[y][6]++
+                                        break;
+                                    case 60:
+                                        speedStats[y][7]++
+                                        break;
+                                    case 70:
+                                        speedStats[y][8]++
+                                        break;
+                                    default:
+                                        break;
+                                }
+                            }
+                        }
+                    }
+                }
+                speedChart.data.datasets[0].data = speedStats[0];
+                speedChart.data.datasets[1].data = speedStats[1];
+                speedChart.data.datasets[2].data = speedStats[2];
+                speedChart.data.datasets[3].data = speedStats[3];
+                speedChart.update();
+            }
+
+        }
+
+
+        //2016
+
+
+        //for (let y16 of )
     </script>
 </body>
 
