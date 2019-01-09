@@ -148,6 +148,14 @@
 
         const stats2014 = JSON.parse(og2014.response);
 
+        const og2013 = new XMLHttpRequest();
+        og2013.open("GET",
+            "https://raw.githubusercontent.com/MattheousDT/crash-ni/master/json/collisions_2013.json",
+            false);
+        og2013.send();
+
+        const stats2013 = JSON.parse(og2013.response);
+
 
 
         const mymap = L.map('mapid').setView([54.5646351, -6.7517848], 9);
@@ -478,10 +486,117 @@
                 );
             }
         });
+
+        const geo2013 = L.geoJson(stats2013, {
+            onEachFeature: function (feature, layer) {
+
+                Number.prototype.pad = function (size) {
+                    var s = String(this);
+                    while (s.length < (size || 2)) {
+                        s = "0" + s;
+                    }
+                    return s;
+                }
+
+                let district = "";
+                switch (feature.properties.a_District) {
+                    case "ANTN":
+                        district = "Antrim and Newtownabbey"
+                        break;
+                    case "ARBC":
+                        district = "Armagh City, Banbridge and Craigavon"
+                        break;
+                    case "ARND":
+                        district = "Ards and North Down"
+                        break;
+                    case "BELC":
+                        district = "Belfast"
+                        break;
+                    case "CCGL":
+                        district = "Causeway Coast and Glens"
+                        break;
+                    case "DCST":
+                        district = "Derry City and Strabane"
+                        break;
+                    case "FERO":
+                        district = "Fermanagh and Omagh"
+                        break;
+                    case "LISC":
+                        district = "Lisburn and Castlereagh"
+                        break;
+                    case "MEAN":
+                        district = "Mid and East Antrim"
+                        break;
+                    case "MIDU":
+                        district = "Mid Ulster"
+                        break;
+                    case "NEMD":
+                        district = "Newry, Mourne and Down"
+                        break;
+                    default:
+                        district = "N/A"
+                        break;
+                }
+
+                let weekday = "";
+                switch (feature.properties.a_wkday) {
+                    case "MON":
+                        weekday = "Monday"
+                        break;
+                    case "TUE":
+                        weekday = "Tuesday"
+                        break;
+                    case "WED":
+                        weekday = "Wednesday"
+                        break;
+                    case "THU":
+                        weekday = "Thursday"
+                        break;
+                    case "FRI":
+                        weekday = "Friday"
+                        break;
+                    case "SAT":
+                        weekday = "Saturday"
+                        break;
+                    case "SUN":
+                        weekday = "Sunday"
+                        break;
+                    default:
+                        weekday = "N/A"
+                        break;
+                }
+
+                const date = new Date(feature.properties.a_year, feature.properties.a_month - 1, feature.properties
+                    .a_day, feature.properties.a_hour, feature.properties.a_min);
+
+                var options = {
+                    day: 'numeric',
+                    month: 'long',
+                    year: "numeric",
+                    year: "numeric",
+                    year: "numeric"
+                };
+
+                layer.bindPopup(
+                    `
+                    <h5>Crash #${feature.properties.a_ref} in ${feature.properties.a_year}</h5>
+                    <hr>
+                <ul>
+                    <li><b>Date:</b> ${weekday}, ${date.toLocaleDateString("EN-GB", options)}</li>
+                    <li><b>Time:</b> ${feature.properties.a_hour.pad(2) + ":" + feature.properties.a_min.pad(2)}</li>
+                    <li><b>District:</b> ${district}</li>
+                    <li><b>Speed Limit:</b> ${feature.properties.a_speed}mph</li>
+                    <li style="color: #c72417"><b>${feature.properties.a_cas} ${feature.properties.a_cas === 1 ? "casualty" : "casualties"}</b></li>
+                </ul>
+                `
+                );
+            }
+        });
         $("#loading-text").text("Finishing up!");
         markers.addLayer(geo2016);
         markers.addLayer(geo2015);
         markers.addLayer(geo2014);
+        markers.addLayer(geo2013);
         mymap.addLayer(markers);
         mymap.fitBounds(markers.getBounds());
     </script>
